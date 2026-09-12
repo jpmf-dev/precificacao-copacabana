@@ -111,6 +111,22 @@ class TestPersistencia(unittest.TestCase):
         np.testing.assert_array_equal(d, desvio)
         self.assertEqual(nomes, self.nomes)
 
+
+    def test_dimensoes_da_rede_sao_preservadas(self) -> None:
+        """Regressao: o arquivo precisa guardar as proprias dimensoes.
+
+        Antes, apenas `dim_entrada` era salvo e a camada oculta era
+        reconstruida com o valor padrao de `config`. Um modelo treinado com
+        outro numero de neuronios — como acontece ao comparar configuracoes
+        nos experimentos — falhava ao ser carregado.
+        """
+        modelo = RegressorPreco(dim_entrada=5, dim_oculta=8)
+        predictor.salvar_modelo(
+            modelo, self.media, self.desvio, self.nomes, self.caminho
+        )
+        carregado, _, _, _ = predictor.carregar_modelo(self.caminho)
+        self.assertEqual(carregado.rede[0].out_features, 8)
+
     def test_carregar_arquivo_inexistente_levanta_erro(self) -> None:
         with self.assertRaises(FileNotFoundError):
             predictor.carregar_modelo(Path(self.tmp.name) / "nao_existe.pth")

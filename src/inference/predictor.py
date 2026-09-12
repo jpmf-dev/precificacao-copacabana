@@ -27,6 +27,11 @@ def salvar_modelo(
 ) -> Path:
     """Grava pesos e parâmetros de padronização em disco.
 
+    As dimensões da rede são lidas do próprio modelo, não do módulo de
+    configuração. Isso mantém o arquivo autossuficiente: se alguém alterar
+    `NEURONIOS_OCULTOS` para testar outra configuração, os modelos salvos
+    anteriormente continuam carregáveis.
+
     Args:
         modelo: rede treinada.
         media: médias usadas na padronização.
@@ -39,13 +44,19 @@ def salvar_modelo(
     """
     caminho = Path(caminho)
     caminho.parent.mkdir(parents=True, exist_ok=True)
+
+    primeira_camada = modelo.rede[0]
+    ultima_camada = modelo.rede[-1]
+
     torch.save(
         obj={
             "state_dict": modelo.state_dict(),
             "media": media,
             "desvio": desvio,
             "nomes_atributos": nomes_atributos,
-            "dim_entrada": len(nomes_atributos),
+            "dim_entrada": primeira_camada.in_features,
+            "dim_oculta": primeira_camada.out_features,
+            "dim_saida": ultima_camada.out_features,
         },
         f=caminho,
     )
@@ -59,6 +70,10 @@ def carregar_modelo(
 
     Atende ao RF08: a inferência carrega um modelo já treinado do disco em
     vez de retreinar, o que é o que viabiliza o tempo de resposta do RNF04.
+
+    A rede é reconstruída com as dimensões gravadas no próprio arquivo. Os
+    valores de `config` servem apenas como alternativa para modelos antigos,
+    salvos antes de as dimensões passarem a ser registradas.
 
     Args:
         caminho: caminho do arquivo `.pth`.
@@ -78,7 +93,11 @@ def carregar_modelo(
     dispositivo = selecionar_dispositivo()
     pacote = torch.load(caminho, map_location=dispositivo, weights_only=False)
 
-    modelo = RegressorPreco(dim_entrada=int(pacote["dim_entrada"]))
+    modelo = RegressorPreco(
+        dim_entrada=int(pacote["dim_entrada"]),
+        dim_oculta=int(pacote.get("dim_oculta", config.NEURONIOS_OCULTOS)),
+        dim_saida=int(pacote.get("dim_saida", 1)),
+    )
     modelo.load_state_dict(pacote["state_dict"])
     modelo.to(dispositivo)
     modelo.eval()
