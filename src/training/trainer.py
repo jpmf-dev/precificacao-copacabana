@@ -109,14 +109,20 @@ def treinar(
             perda_teste = funcao_perda(modelo(xv), yv)
 
         if epoca % intervalo == 0 or epoca == epocas - 1:
+            # detach() desliga o rastreamento de gradiente antes de converter
+            # para float. Sem isso o PyTorch emite UserWarning, porque tratar
+            # um tensor que ainda participa do grafo como escalar é ambíguo.
+            mae_treino = perda.detach().item()
+            mae_teste = perda_teste.detach().item()
+
             historico.epocas.append(epoca)
-            historico.perda_treino.append(float(perda))
-            historico.perda_teste.append(float(perda_teste))
+            historico.perda_treino.append(mae_treino)
+            historico.perda_teste.append(mae_teste)
             if verbose:
                 print(
                     f"Época {epoca:4d} | "
-                    f"MAE treino: R$ {float(perda):7.2f} | "
-                    f"MAE teste: R$ {float(perda_teste):7.2f}"
+                    f"MAE treino: R$ {mae_treino:7.2f} | "
+                    f"MAE teste: R$ {mae_teste:7.2f}"
                 )
 
     return modelo, historico
