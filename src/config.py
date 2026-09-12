@@ -26,7 +26,6 @@ PROPORCAO_TREINO: Final[float] = 0.8
 EPOCAS: Final[int] = 300
 TAXA_APRENDIZADO: Final[float] = 0.01
 NEURONIOS_OCULTOS: Final[int] = 32
-TAMANHO_LOTE: Final[int] = 256
 
 TOLERANCIA_RELATIVA: Final[float] = 0.25
 JANELA_SAZONAL_DIAS: Final[int] = 21

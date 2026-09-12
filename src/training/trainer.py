@@ -51,6 +51,7 @@ def treinar(
     y_teste: np.ndarray,
     epocas: int = config.EPOCAS,
     taxa_aprendizado: float = config.TAXA_APRENDIZADO,
+    dim_oculta: int = config.NEURONIOS_OCULTOS,
     verbose: bool = True,
 ) -> tuple[RegressorPreco, HistoricoTreino]:
     """Treina a rede e acompanha o erro em treino e teste.
@@ -62,6 +63,9 @@ def treinar(
         y_teste: preços de teste.
         epocas: número de passagens completas pelos dados.
         taxa_aprendizado: tamanho do passo do otimizador.
+        dim_oculta: número de neurônios da camada oculta. Exposto como
+            parâmetro para permitir comparar configurações sem editar o
+            módulo de configuração.
         verbose: imprime o erro a cada 10% das épocas quando verdadeiro.
 
     Returns:
@@ -81,7 +85,9 @@ def treinar(
     xv = torch.tensor(x_teste, dtype=torch.float32, device=dispositivo)
     yv = torch.tensor(y_teste, dtype=torch.float32, device=dispositivo)
 
-    modelo = RegressorPreco(dim_entrada=xt.shape[1]).to(dispositivo)
+    modelo = RegressorPreco(
+        dim_entrada=xt.shape[1], dim_oculta=dim_oculta
+    ).to(dispositivo)
 
     funcao_perda = nn.L1Loss()
     otimizador = torch.optim.Adam(params=modelo.parameters(), lr=taxa_aprendizado)
